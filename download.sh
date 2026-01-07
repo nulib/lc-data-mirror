@@ -33,17 +33,17 @@ for t in \
   authorities/genreForms \
   authorities/performanceMediums \
   authorities/demographicTerms \
-  vocabularies/cataloging \
-  vocabularies/relators \
-  vocabularies/languages \
-  vocabularies/iso639-1 \
-  vocabularies/iso639-2 \
-  vocabularies/iso639-5 \
-  vocabularies/countries \
-  vocabularies/geographicAreas \
-  vocabularies/organizations \
-  vocabularies/graphicMaterials \
-  vocabularies/ethnographicTerms; do
+  vocabulary/cataloging \
+  vocabulary/relators \
+  vocabulary/languages \
+  vocabulary/iso639-1 \
+  vocabulary/iso639-2 \
+  vocabulary/iso639-5 \
+  vocabulary/countries \
+  vocabulary/geographicAreas \
+  vocabulary/organizations \
+  vocabulary/graphicMaterials \
+  vocabulary/ethnographicTerms; do
     dl $t.madsrdf.ttl.gz
 done
 dl resources/hubs.bibframe.ttl.gz
