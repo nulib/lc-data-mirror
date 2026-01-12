@@ -1,0 +1,14 @@
+---
+services:
+  virtuoso:
+    image: openlink/virtuoso-opensource-7:latest
+    container_name: virtuoso
+    ports:
+      - "8890:8890"
+      - "1111:1111"
+    volumes:
+      - ./database:/database
+      - ../data:/data:ro
+    environment:
+      - DBA_PASSWORD=${DBA_PASSWORD:-virtuoso}
+    restart: unless-stopped
