@@ -2,7 +2,6 @@
 
 ```elixir
 Mix.install([
-  {:req, "~> 0.5.17"},
   {:authoritex, "~> 2.0"}
 ])
 ```
@@ -218,6 +217,8 @@ defmodule Authoritex.LOC.SKOS.Languages do
 end
 ```
 
+## Configure Authoritex to use LOC via SKOS
+
 ```elixir
 Application.put_env(:authoritex, :authorities, [
   Authoritex.LOC.SKOS.Names,
@@ -225,36 +226,52 @@ Application.put_env(:authoritex, :authorities, [
   Authoritex.LOC.SKOS.GenreForms,
   Authoritex.LOC.SKOS.Languages
 ])
-# Application.put_env(:virtuoso, :endpoint, "http://virtuoso-server:8890/")
+Application.put_env(:virtuoso, :endpoint, "http://localhost:8890/")
 ```
+
+## Sample Queries
 
 ```elixir
 Authoritex.authorities()
 ```
 
+#### Fetch from NAF
+
 ```elixir
 Authoritex.fetch("http://id.loc.gov/authorities/names/n00006689")
 ```
+
+#### Fetch from LCSH
 
 ```elixir
 Authoritex.fetch("http://id.loc.gov/authorities/subjects/sh85017416")
 ```
 
+#### Fetch from LCGFT
+
 ```elixir
 Authoritex.fetch("http://id.loc.gov/authorities/genreForms/gf2014026114")
 ```
+
+#### Search LCGFT (make sure all variants are returned on variant match)
 
 ```elixir
 Authoritex.search("lcgft", "educat")
 ```
 
+#### Search LCNAF (make sure non-English label fallback works)
+
 ```elixir
 Authoritex.search("lcnaf", "lyotard")
 ```
 
+#### Search variant with multi-token query
+
 ```elixir
-Authoritex.search("lcsh", "apple", 5)
+Authoritex.search("lcsh", "superficial scal", 50)
 ```
+
+#### Search label with multi-token query
 
 ```elixir
 Authoritex.search("lcsh", "great brit", 5)

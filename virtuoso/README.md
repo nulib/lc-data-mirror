@@ -28,7 +28,7 @@ Most of the data can be loaded and indexed in a matter of minutes, but loading a
     RDF_OBJ_FT_RULE_DEL (NULL, NULL, 'All');
     RDF_OBJ_FT_RULE_ADD (NULL, 'http://www.w3.org/2004/02/skos/core#prefLabel', 'labels');
     RDF_OBJ_FT_RULE_ADD (NULL, 'http://www.w3.org/2004/02/skos/core#altLabel', 'labels');
-    VT_BATCH_UPDATE ('DB.DBA.RDF_OBJ', 'ON', 20);
+    VT_BATCH_UPDATE ('DB.DBA.RDF_OBJ', 'ON', 120);
     ```
 3. Tell virtuoso which files to bulk load:
     ```
