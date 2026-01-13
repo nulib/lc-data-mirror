@@ -6,8 +6,10 @@ This documentation uses the [Virtuoso RDF Open-Source Edition](https://vos.openl
 
 ### Starting the server
 
-1. Make sure you have sufficient space for the database, which will take around 30GB when fully loaded and indexed.
-2. Edit the [config file](virtuoso/virtuoso.ini) to best reflect your system's resources, using the guidelines on lines 85-109.
+1. Make sure you have sufficient space for the database, which will take around 12GB when fully loaded and indexed, plus some
+   extra space for temporary files and transaction logs.
+2. Edit the [config file](database/virtuoso.ini) to best reflect your system's resources, using the guidelines on lines 85-109,
+   and set both `ThreadsPerQuery` and `AsyncQueueMaxThreads` to a value that leaves a few CPU cores free to do other things.
 3. Start the server:
     ```shell
     cd virtuoso
@@ -16,13 +18,13 @@ This documentation uses the [Virtuoso RDF Open-Source Edition](https://vos.openl
 
 ### Loading data
 
-Most of the data can be loaded and indexed in a matter of minutes, but loading and indexing the Name Authority File (`authorities/names.skosrdf.ttl.gz`) can take many hours due to its size.
+Most of the data can be loaded and indexed in a matter of minutes, but loading and indexing the Name Authority File (`authorities/names.skosrdf.ttl.gz`) can take a while due to its size.
 
 1. Start the command-line iSQL interface:
     ```
     docker compose exec virtuoso isql
     ```
-2. Configure the `labels` index:
+2. Configure the `labels` free-text index:
     ```
     RDF_OBJ_FT_RULE_DEL (NULL, NULL, 'ALL');
     RDF_OBJ_FT_RULE_DEL (NULL, NULL, 'All');
@@ -41,11 +43,17 @@ Most of the data can be loaded and indexed in a matter of minutes, but loading a
     ```
     rdf_loader_run();
     ```
-    ***Note:** On an 8-core, 32GB Linux system, this load took about 20 minutes.*
-5. When the bulk loader finishes, set a checkpoint and build the index:
+    ***Note:** On a 32GB MacBook Pro M2 Max, with Docker configured to use 12 cores and 16GB RAM, this load took about 20 minutes.*
+5. When the bulk loader finishes, set a checkpoint and exit `isql`:
     ```
     checkpoint;
+    exit;
+6. In order to kickstart free-text indexing, restart the server:
     ```
+    docker compose restart virtuoso
+    ```
+   Indexing should take anywhere from 20 minutes to a couple hours, depending on your system resources.
+
 
 ### Querying data
 
@@ -56,13 +64,22 @@ POST /sparql
 Accept: application/json
 Content-Type: application/sparql-query
 
-SELECT ?s ?p ?o
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?authority COUNT(*) AS ?triples
+WHERE {
+  GRAPH ?authority {
+    ?s skos:prefLabel ?o
+  }
+}
+GROUP BY ?authority
 LIMIT 100
 ```
 
 #### Fetching the label and variants for a specific ID
 
 ```sparql
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
 SELECT ?id ?label (GROUP_CONCAT(DISTINCT ?variant; separator="|") AS ?variants)
 WHERE {
   VALUES ?id { <http://id.loc.gov/authorities/subjects/sh85017416> }

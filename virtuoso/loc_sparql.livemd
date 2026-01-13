@@ -154,6 +154,8 @@ defmodule Authoritex.LOC.SKOS.Base do
   defmacro __using__(_) do
     quote do
       @moduledoc "Authoritex implementation for #{@description}"
+      @behaviour Authoritex
+
       require Logger
       alias Authoritex.SKOS
 
@@ -185,7 +187,6 @@ end
 
 ```elixir
 defmodule Authoritex.LOC.SKOS.Names do
-  @behaviour Authoritex
   @base_uri "http://id.loc.gov/authorities/names"
   @code "lcnaf"
   @description "Library of Congress Name Authority File (SKOS)"
@@ -193,7 +194,6 @@ defmodule Authoritex.LOC.SKOS.Names do
 end
 
 defmodule Authoritex.LOC.SKOS.SubjectHeadings do
-  @behaviour Authoritex
   @base_uri "http://id.loc.gov/authorities/subjects"
   @code "lcsh"
   @description "Library of Congress Subject Headings (SKOS)"
@@ -201,7 +201,6 @@ defmodule Authoritex.LOC.SKOS.SubjectHeadings do
 end
 
 defmodule Authoritex.LOC.SKOS.GenreForms do
-  @behaviour Authoritex
   @base_uri "http://id.loc.gov/authorities/genreForms"
   @code "lcgft"
   @description "Library of Congress Genre/Form Terms (SKOS)"
@@ -209,7 +208,6 @@ defmodule Authoritex.LOC.SKOS.GenreForms do
 end
 
 defmodule Authoritex.LOC.SKOS.Languages do
-  @behaviour Authoritex
   @base_uri "http://id.loc.gov/vocabulary/languages"
   @code "lclang"
   @description "Library of Congress MARC List for Languages (SKOS)"
