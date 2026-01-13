@@ -1,4 +1,4 @@
-This repo contains a partial mirror of the [bulk data downloads](https://id.loc.gov/download/) from the Library of Congress Linked Data Service. Only [MADS/RDF](https://www.loc.gov/standards/mads/rdf/) files are mirrored in [Turtle (TTL)](https://www.w3.org/TR/turtle/) format, since this combination can easily be crosswalked to [SKOS/RDF](https://www.w3.org/TR/2008/WD-skos-reference-20080829/skos.html) and/or any other available format ([JSON-LD](https://json-ld.org/), [N-Triples](https://www.w3.org/TR/n-triples/), or [XML](https://www.w3.org/TR/rdf-syntax-grammar/)).
+This repo contains a partial mirror of the [bulk data downloads](https://id.loc.gov/download/) from the Library of Congress Linked Data Service. Both [MADS/RDF](https://www.loc.gov/standards/mads/rdf/) and [SKOS/RDF](https://www.w3.org/TR/2008/WD-skos-reference-20080829/skos.html) files are mirrored in [Turtle (TTL)](https://www.w3.org/TR/turtle/) format, and can easily be crosswalked to any other available serialization format ([JSON-LD](https://json-ld.org/), [N-Triples](https://www.w3.org/TR/n-triples/), or [XML](https://www.w3.org/TR/rdf-syntax-grammar/)).
 
 ## Mirrored Authorities and Vocabularies
 
@@ -20,6 +20,25 @@ This repo contains a partial mirror of the [bulk data downloads](https://id.loc.
 - [Cultural Heritage Organizations](https://id.loc.gov/download/vocabularies/organizations.madsrdf.ttl.gz)
 - [Thesaurus for Graphic Materials](https://id.loc.gov/download/vocabularies/graphicMaterials.madsrdf.ttl.gz)
 - [AFS Ethnographic Thesaurus](https://id.loc.gov/download/vocabularies/ethnographicTerms.madsrdf.ttl.gz)
+
+### SKOS/RDF (TTL)
+- [Name Authority File](https://id.loc.gov/download/authorities/names.skosrdf.ttl.gz)
+- [Subject Headings](https://id.loc.gov/download/authorities/subjects.skosrdf.ttl.gz)
+- [Children's Subject Headings](https://id.loc.gov/download/authorities/childrensSubjects.skosrdf.ttl.gz)
+- [Genre/Form Terms](https://id.loc.gov/download/authorities/genreForms.skosrdf.ttl.gz)
+- [Medium of Performance Thesaurus for Music](https://id.loc.gov/download/authorities/performanceMediums.skosrdf.ttl.gz)
+- [Demographic Group Terms](https://id.loc.gov/download/authorities/demographicTerms.skosrdf.ttl.gz)
+- [Cataloging](https://id.loc.gov/download/vocabularies/cataloging.skosrdf.ttl.gz)
+- [Relators](https://id.loc.gov/download/vocabularies/relators.skosrdf.ttl.gz)
+- [MARC Languages](https://id.loc.gov/download/vocabularies/languages.skosrdf.ttl.gz)
+- [ISO639-1 Languages](https://id.loc.gov/download/vocabularies/iso639-1.skosrdf.ttl.gz)
+- [ISO639-2 Languages](https://id.loc.gov/download/vocabularies/iso639-2.skosrdf.ttl.gz)
+- [ISO639-5 Languages](https://id.loc.gov/download/vocabularies/iso639-5.skosrdf.ttl.gz)
+- [MARC Countries](https://id.loc.gov/download/vocabularies/countries.skosrdf.ttl.gz)
+- [MARC Geographic Areas](https://id.loc.gov/download/vocabularies/geographicAreas.skosrdf.ttl.gz)
+- [Cultural Heritage Organizations](https://id.loc.gov/download/vocabularies/organizations.skosrdf.ttl.gz)
+- [Thesaurus for Graphic Materials](https://id.loc.gov/download/vocabularies/graphicMaterials.skosrdf.ttl.gz)
+- [AFS Ethnographic Thesaurus](https://id.loc.gov/download/vocabularies/ethnographicTerms.skosrdf.ttl.gz)
 
 ### BIBFRAME (TTL)
 - [BIBFRAME Hubs](https://id.loc.gov/download/resources/hubs.bibframe.ttl.gz)
