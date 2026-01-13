@@ -45,6 +45,7 @@ for t in \
   vocabulary/graphicMaterials \
   vocabulary/ethnographicTerms; do
     dl $t.madsrdf.ttl.gz
+    dl $t.skosrdf.ttl.gz
 done
 dl resources/hubs.bibframe.ttl.gz
 dl externallinks.nt.gz
