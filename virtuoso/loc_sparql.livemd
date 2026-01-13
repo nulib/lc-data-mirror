@@ -1,0 +1,261 @@
+# LOC “Offline” Replacement (via Virtuoso)
+
+```elixir
+Mix.install([
+  {:req, "~> 0.5.17"},
+  {:authoritex, "~> 2.0"}
+])
+```
+
+## Generic SKOS SPARQL Authority
+
+```elixir
+defmodule Authoritex.SKOS do
+  @moduledoc """
+  This module implements a generic SKOS fetch/search client for Authoritex using
+  `skos:prefLabel` and `skos:altLabel` for the label and variants, respectively. It
+  is written specifically for the Virtuoso RDF triple store, using the
+  `bif:contains` free-text search predicate, so indexing `skos:prefLabel` and
+  `skos:altLabel` is required.
+  """
+
+  require Logger
+
+  @fetch_query_template """
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+  SELECT ?id ?label (GROUP_CONCAT(DISTINCT ?variant; separator="|") AS ?variants)
+  WHERE {
+    VALUES ?id { <{{id}}> }
+
+    OPTIONAL {
+      ?id skos:prefLabel ?label_en .
+      FILTER(LANGMATCHES(LANG(?label_en), "en"))
+    }
+    ?id skos:prefLabel ?label_any .
+    BIND(COALESCE(?label_en, ?label_any) AS ?label)
+
+    OPTIONAL {
+      ?id skos:altLabel ?variant .
+      FILTER(LANGMATCHES(LANG(?variant), "en"))
+    }
+  }
+  GROUP BY ?id ?label
+  LIMIT 1
+  """
+
+  @search_query_template """
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+
+  SELECT ?id ?label (GROUP_CONCAT(DISTINCT ?variant; separator="|") AS ?variants)
+  WHERE {
+    GRAPH <{{graph}}> {
+      {
+        ?id skos:prefLabel ?label .
+        ?label bif:contains "{{tokenized_stem}}" OPTION (score ?sc) .
+        FILTER(STRSTARTS(LCASE(?label), "{{stem}}"))
+        OPTIONAL {
+          ?id skos:altLabel ?variant .
+          FILTER(LANGMATCHES(LANG(?variant), "en"))
+        }
+      } UNION {
+        ?id skos:prefLabel ?label .
+        ?id skos:altLabel ?variant_match .
+        ?variant_match bif:contains "{{tokenized_stem}}" OPTION (score ?sc) .
+        FILTER(STRSTARTS(LCASE(?variant_match), "{{stem}}"))
+        ?id skos:altLabel ?variant .
+        FILTER(LANGMATCHES(LANG(?variant), "en"))
+      }
+    }
+  }
+  ORDER BY DESC(?sc)
+  LIMIT {{count}}
+  """
+
+  def build_query(template, replacements) do
+    Enum.reduce(replacements, template, fn {key, value}, acc ->
+      String.replace(acc, "{{#{key}}}", value)
+    end)
+  end
+
+  def fetch(id) do
+    build_query(@fetch_query_template, id: id)
+    |> run_query()
+    |> case do
+      [] -> nil
+      [result|_] -> result
+    end
+  end
+
+  def search(graph, stem, count \\ 50) do
+    tokenized_stem =
+      (stem <> "*")
+      |> String.split(~r/\s+/)
+      |> Enum.map(&"'#{&1}'")
+      |> Enum.join(" AND ")
+
+    build_query(
+      @search_query_template,
+      graph: graph,
+      stem: stem,
+      tokenized_stem: tokenized_stem,
+      count: to_string(count)
+    )
+    |> run_query()
+  end
+
+  defp base_url do
+    Application.get_env(:virtuoso, :endpoint, "http://localhost:8890/")
+  end
+
+  defp run_query(query) do
+    Authoritex.HTTP.Client.new(
+      base_url: base_url(),
+      url: "/sparql",
+      body: query,
+      headers: [
+        {"content-type", "application/sparql-query"},
+        {"accept", "application/json"}
+      ]
+    )
+    |> Req.post!(decode_json: [keys: :atoms])
+    |> Map.get(:body)
+    |> parse_response()
+  end
+
+  defp parse_response(response) when is_map(response) do
+    response
+    |> get_in([:results, :bindings])
+    |> Enum.map(fn entry ->
+      Enum.map(entry, fn
+        {:variants, %{value: ""}} -> {:variants, []}
+        {:variants, %{value: value}} -> {:variants, String.split(value, "|")}
+        {key, %{value: value}} -> {key, value}
+      end)
+      |> Enum.into(%{})
+    end)
+  end
+
+  defp parse_response(response) do
+    if String.contains?(response, "Error FT370: Wildcard word needs at least 4 leading characters") do
+      Logger.debug("Final token must be at least 4 characters")
+    else
+      Logger.warning("Unexpected response from server: #{response}")
+    end
+    []
+  end
+end
+
+```
+
+## Drop-in Replacement LOC Authority using SKOS
+
+```elixir
+defmodule Authoritex.LOC.SKOS.Base do
+  defmacro __using__(_) do
+    quote do
+      @moduledoc "Authoritex implementation for #{@description}"
+      require Logger
+      alias Authoritex.SKOS
+
+      @impl true
+      def can_resolve?(@base_uri <> "/" <> _), do: true
+      def can_resolve?(_), do: false
+
+      @impl true
+      def code, do: @code
+
+      @impl true
+      def description, do: @description
+
+      @impl true
+      def fetch(id) do
+        Logger.debug("Fetching #{id} via #{__MODULE__}")
+        SKOS.fetch(id)
+      end
+
+      @impl true
+      def search(query, max_results \\ 20) do
+        Logger.debug("Searching for #{query} via #{__MODULE__}")
+        SKOS.search(@base_uri, query, max_results)
+      end
+    end
+  end
+end
+```
+
+```elixir
+defmodule Authoritex.LOC.SKOS.Names do
+  @behaviour Authoritex
+  @base_uri "http://id.loc.gov/authorities/names"
+  @code "lcnaf"
+  @description "Library of Congress Name Authority File (SKOS)"
+  use Authoritex.LOC.SKOS.Base
+end
+
+defmodule Authoritex.LOC.SKOS.SubjectHeadings do
+  @behaviour Authoritex
+  @base_uri "http://id.loc.gov/authorities/subjects"
+  @code "lcsh"
+  @description "Library of Congress Subject Headings (SKOS)"
+  use Authoritex.LOC.SKOS.Base
+end
+
+defmodule Authoritex.LOC.SKOS.GenreForms do
+  @behaviour Authoritex
+  @base_uri "http://id.loc.gov/authorities/genreForms"
+  @code "lcgft"
+  @description "Library of Congress Genre/Form Terms (SKOS)"
+  use Authoritex.LOC.SKOS.Base
+end
+
+defmodule Authoritex.LOC.SKOS.Languages do
+  @behaviour Authoritex
+  @base_uri "http://id.loc.gov/vocabulary/languages"
+  @code "lclang"
+  @description "Library of Congress MARC List for Languages (SKOS)"
+  use Authoritex.LOC.SKOS.Base
+end
+```
+
+```elixir
+Application.put_env(:authoritex, :authorities, [
+  Authoritex.LOC.SKOS.Names,
+  Authoritex.LOC.SKOS.SubjectHeadings,
+  Authoritex.LOC.SKOS.GenreForms,
+  Authoritex.LOC.SKOS.Languages
+])
+# Application.put_env(:virtuoso, :endpoint, "http://virtuoso-server:8890/")
+```
+
+```elixir
+Authoritex.authorities()
+```
+
+```elixir
+Authoritex.fetch("http://id.loc.gov/authorities/names/n00006689")
+```
+
+```elixir
+Authoritex.fetch("http://id.loc.gov/authorities/subjects/sh85017416")
+```
+
+```elixir
+Authoritex.fetch("http://id.loc.gov/authorities/genreForms/gf2014026114")
+```
+
+```elixir
+Authoritex.search("lcgft", "educat")
+```
+
+```elixir
+Authoritex.search("lcnaf", "lyotard")
+```
+
+```elixir
+Authoritex.search("lcsh", "apple", 5)
+```
+
+```elixir
+Authoritex.search("lcsh", "great brit", 5)
+```
