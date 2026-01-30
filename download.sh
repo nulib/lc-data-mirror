@@ -3,24 +3,27 @@ dl() {
   local url=https://id.loc.gov/download/$1
   local dest=data/$1
 
+  echo -n "Downloading $url to $dest"
   mkdir -p "$(dirname "$dest")"
 
-  local ims=()
-  if [ -f "$dest" ]; then
-    # Get the file's last modified time in HTTP-date format
-    ims=(-H "If-Modified-Since: $(date -R -r "$dest")")
+  local inm=()
+  if [ -f "$dest.etag" ]; then
+    # Read ETag from file
+    local etag=$(cat "$dest.etag")
+    inm=(-H "If-None-Match: $etag")
   fi
+  echo ""
 
   # Download the file, save headers to a temp file
   local headerfile
   headerfile=$(mktemp)
-  curl -L -D "$headerfile" "${ims[@]}" -o "$dest" "$url"
+  curl -L -D "$headerfile" "${inm[@]}" -o "$dest" "$url"
   
-  # Get Last-Modified header and set file mtime if present
-  local lm
-  lm=$(grep -i '^Last-Modified:' "$headerfile" | sed 's/Last-Modified: //I' | tr -d '\r')
-  if [ -n "$lm" ]; then
-    touch -d "$lm" "$dest"
+  # Save ETag header if present
+  local etag
+  etag=$(grep -i '^ETag:' "$headerfile" | sed 's/ETag: //I' | tr -d '\r')
+  if [ -n "$etag" ]; then
+    echo -n "$etag" > "$dest.etag"
   fi
 
   rm -f "$headerfile"
